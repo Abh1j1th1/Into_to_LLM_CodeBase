@@ -441,6 +441,8 @@ async def task(output_file, agent, task_indices, model_name, concurrency, memory
             for col in columns:
                 if col not in df.columns:
                     df[col] = args.condition if col == "condition" else ({} if col == "metadata" else None)
+            for obj_col in ("model", "condition", "task_index", "result", "messages", "metadata", "timestamp", "sid"):
+                df[obj_col] = df[obj_col].astype(object)
         else:
             df = pd.DataFrame(columns=columns)
 
