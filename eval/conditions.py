@@ -21,6 +21,7 @@ from trajectory_parser import (
     _parse_tool_args,
     is_empty_output,
     is_error_output,
+    is_mutating_command,
     is_truncated_output,
     normalize_command,
     rouge_l_f1,
@@ -229,7 +230,7 @@ def process_env_interaction(
         norm_cmd = normalize_command(cmd)
         obs = tool_outputs_by_id.get(tc_id, "")
         obs_err = is_error_output(obs)
-        obs_empty = is_empty_output(obs)
+        obs_empty = is_empty_output(obs) and not is_mutating_command(name, cmd)
         obs_trunc = is_truncated_output(obs)
 
         prev_occurrences = state.seen_actions.get(norm_cmd, [])

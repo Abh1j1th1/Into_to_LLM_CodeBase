@@ -113,6 +113,25 @@ def is_error_output(text: str) -> bool:
     return bool(_ERROR_RE.search(text))
 
 
+_SQL_MUTATING_RE = re.compile(r"^\s*(?:INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|REPLACE|TRUNCATE)\b", re.IGNORECASE)
+_BASH_MUTATING_RE = re.compile(
+    r"^\s*(?:mkdir|touch|cp|mv|rm|chmod|chown|chgrp|useradd|usermod|userdel|groupadd|ln|cd|export|unset|kill|pkill|systemctl|service)\b|(?<![<>])>(?!=)",
+    re.IGNORECASE,
+)
+
+
+def is_mutating_command(tool_name: str, cmd: str) -> bool:
+    """Return True for DML/DDL SQL or side-effecting bash commands where empty output is normal."""
+    s = (cmd or "").strip()
+    if tool_name == "execute_sql":
+        return bool(_SQL_MUTATING_RE.match(s))
+    if tool_name == "bash_action":
+        # Check last statement if chained with && or ;
+        last_part = re.split(r"(?:&&|;|\|\|)", s)[-1].strip()
+        return bool(_BASH_MUTATING_RE.match(last_part))
+    return False
+
+
 def is_empty_output(text: str) -> bool:
     """Check whether a tool observation is effectively empty."""
     cleaned = (text or "").strip().lower()
@@ -210,6 +229,7 @@ class TrajectoryFeatures:
     prompt_tokens: int
     completion_tokens: int
     latency_s: float
+    temperature: float = 0.0
     env_commands: List[str] = field(default_factory=list)
     error_messages: List[str] = field(default_factory=list)
 
@@ -290,7 +310,8 @@ def parse_trajectory(record: Dict[str, Any]) -> TrajectoryFeatures:
             num_tool_calls += 1
             tc_id = str(tc.get("id", ""))
             name, _, cmd = _parse_tool_args(tc)
-            action_strings_for_rouge.append(f"{name}:{cmd}")
+            if name in ENV_TOOLS:
+                action_strings_for_rouge.append(f"{name}:{cmd}")
             obs = tool_outputs_by_id.get(tc_id, "")
 
             if VERIFY_GATE_MARKER in obs:
@@ -311,7 +332,7 @@ def parse_trajectory(record: Dict[str, Any]) -> TrajectoryFeatures:
                     seen_env_cmds.add(norm)
 
                 obs_err = is_error_output(obs)
-                obs_empty = is_empty_output(obs)
+                obs_empty = is_empty_output(obs) and not is_mutating_command(name, cmd)
                 obs_trunc = is_truncated_output(obs)
                 if "failed to parse tool call" in obs.lower():
                     parse_error_count += 1
@@ -405,16 +426,16 @@ def parse_trajectory(record: Dict[str, Any]) -> TrajectoryFeatures:
     else:
         failure_mode = "wrong_answer_after_exploration"
 
-    # Process quality in [0, 1] and graded partial-credit level in {0, 1, 2, 3}
+    # Process quality in [0, 1] (purely process-based, without penalizing concise 1-shot SQL/bash)
     valid_ratio = (
         max(0, num_env_calls - error_count - empty_output_count) / num_env_calls
         if num_env_calls > 0
         else 0.0
     )
-    explored_signal = 1.0 if num_env_calls >= 2 else (0.35 if num_env_calls == 1 else 0.0)
+    clean_exec_signal = 1.0 if (num_env_calls >= 1 and error_count == 0 and not tle) else (0.4 if num_env_calls >= 1 else 0.0)
     non_loop_signal = max(0.0, 1.0 - exact_repeat_rate)
     process_quality = round(
-        0.45 * valid_ratio + 0.30 * explored_signal + 0.25 * non_loop_signal,
+        0.45 * valid_ratio + 0.30 * clean_exec_signal + 0.25 * non_loop_signal,
         4,
     )
 
@@ -465,6 +486,7 @@ def parse_trajectory(record: Dict[str, Any]) -> TrajectoryFeatures:
         prompt_tokens=int(meta.get("prompt_tokens", 0) or 0),
         completion_tokens=int(meta.get("completion_tokens", 0) or 0),
         latency_s=float(meta.get("latency_s", 0.0) or 0.0),
+        temperature=float(meta.get("temperature", 0.0) or 0.0),
         env_commands=env_commands,
         error_messages=error_messages,
     )

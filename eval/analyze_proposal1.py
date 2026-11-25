@@ -35,12 +35,17 @@ def build_matrices(
     """Assemble (models x items) matrices for outcomes y, process quality z, partial credit g."""
     # Group by (model_cfg, item_id); if multiple conditions exist for one model, treat model::condition
     grouped: Dict[Tuple[str, str], List[TrajectoryFeatures]] = defaultdict(list)
+    multi_run_outcomes: Dict[Tuple[str, str], List[int]] = defaultdict(list)
     item_env_map: Dict[str, str] = {}
     for f in feats:
         if not f.status_valid:
             continue
-        m_label = f.model if f.condition == "c0" else f"{f.model} [{f.condition}]"
-        grouped[(m_label, f.item_id)].append(f)
+        is_sampled = float((getattr(f, "temperature", 0.0) or 0.0)) > 0.0
+        base_label = f.model if f.condition == "c0" else f"{f.model} [{f.condition}]"
+        if is_sampled:
+            multi_run_outcomes[(base_label, f.item_id)].append(f.success)
+            continue
+        grouped[(base_label, f.item_id)].append(f)
         item_env_map[f.item_id] = f.task_type
 
     models = sorted({m for m, _ in grouped})
@@ -51,7 +56,6 @@ def build_matrices(
     y_mat = np.full((M, I), np.nan, dtype=float)
     z_mat = np.full((M, I), np.nan, dtype=float)
     g_mat = np.full((M, I), np.nan, dtype=float)
-    multi_run_outcomes: Dict[Tuple[str, str], List[int]] = {}
 
     m_pos = {m: idx for idx, m in enumerate(models)}
     i_pos = {it: idx for idx, it in enumerate(items)}
@@ -59,11 +63,10 @@ def build_matrices(
     for (m, it), run_list in grouped.items():
         run_list_sorted = sorted(run_list, key=lambda r: r.run_number)
         mi, ii = m_pos[m], i_pos[it]
-        # Primary evaluation uses run 1 (or mean across runs for repeated trials)
         y_mat[mi, ii] = float(np.mean([r.success for r in run_list_sorted]))
         z_mat[mi, ii] = float(np.mean([r.process_quality for r in run_list_sorted]))
         g_mat[mi, ii] = float(np.mean([r.partial_credit_level for r in run_list_sorted]))
-        if len(run_list_sorted) > 1:
+        if len(run_list_sorted) > 1 and (m, it) not in multi_run_outcomes:
             multi_run_outcomes[(m, it)] = [r.success for r in run_list_sorted]
 
     return models, items, item_envs, y_mat, z_mat, g_mat, multi_run_outcomes

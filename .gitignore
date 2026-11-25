@@ -20,3 +20,6 @@ analysis
 # local Python virtual environment
 .venv/
 .pytest_cache/
+eval/model.local.yaml
+eval/*.local.yaml
+eval/results/

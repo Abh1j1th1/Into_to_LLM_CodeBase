@@ -40,6 +40,32 @@ from conditions import (
 EXTRA_BODY: Dict[str, Any] = {}  # set from --extra-body
 
 
+class RateLimitError(Exception):
+    def __init__(self, wait_s: float, message: str = "Rate limited", is_daily: bool = False):
+        super().__init__(message)
+        self.wait_s = wait_s
+        self.is_daily = is_daily
+
+
+def _parse_retry_after(header_val: Optional[str]) -> float:
+    if not header_val:
+        return 15.0
+    s = str(header_val).strip().lower()
+    total = 0.0
+    if m := re.search(r"([0-9]+(?:\.[0-9]+)?)h", s):
+        total += float(m.group(1)) * 3600.0
+    if m := re.search(r"([0-9]+(?:\.[0-9]+)?)m(?!s)", s):
+        total += float(m.group(1)) * 60.0
+    if m := re.search(r"([0-9]+(?:\.[0-9]+)?)ms", s):
+        total += float(m.group(1)) / 1000.0
+    elif m := re.search(r"([0-9]+(?:\.[0-9]+)?)s", s):
+        total += float(m.group(1))
+    elif total == 0.0:
+        if m := re.search(r"([0-9]+(?:\.[0-9]+)?)", s):
+            total = float(m.group(1))
+    return max(2.0, min(total + 1.5, 120.0)) if total > 0 else 15.0
+
+
 class OpenAIAgent:
     def __init__(
         self,
@@ -79,6 +105,7 @@ class OpenAIAgent:
             headers={
                 "Authorization": "Bearer " + self.api_key,
                 "Content-Type": "application/json",
+                "Accept-Encoding": "gzip, deflate",
             },
         )
         try:
@@ -87,6 +114,11 @@ class OpenAIAgent:
             text = await response.text()
             print(f"Error: {text}", flush=True)
             raise
+        if response.status == 429:
+            retry_after = response.headers.get("retry-after") or response.headers.get("x-ratelimit-reset-tokens")
+            wait_s = _parse_retry_after(retry_after)
+            is_daily = "tokens per day" in str(data).lower() or "requests per day" in str(data).lower()
+            raise RateLimitError(wait_s, f"HTTP 429: {data}", is_daily=is_daily)
         if response.status != 200:
             print(payload)
             print("Error", data, flush=True)
@@ -101,19 +133,25 @@ class OpenAIAgent:
     async def chat_completion(
         self, messages: List[dict], tools: Optional[List[dict]] = None, temperature=None
     ) -> Tuple[dict, dict]:
-        max_retries = 3
+        max_retries = 12
         for tries in range(max_retries):
             try:
                 if self.model2 and random.random() < 0.5:
                     return await self.call(self.base_url2, self.model2, messages, tools, temperature)
                 return await self.call(self.base_url, self.model, messages, tools, temperature)
+            except RateLimitError as e:
+                if e.is_daily or tries == max_retries - 1:
+                    raise
+                if self.verbose:
+                    print(f"Rate limited, sleeping {e.wait_s:.1f}s (attempt {tries + 1}/{max_retries})", flush=True)
+                await asyncio.sleep(min(e.wait_s, 75.0))
             except Exception:
                 if tries == max_retries - 1:
                     raise
                 if self.verbose:
                     traceback.print_exc()
                     print(f"API call failed (attempt {tries + 1}/{max_retries})", flush=True)
-                await asyncio.sleep(1)
+                await asyncio.sleep(min(2.0 * (tries + 1), 15.0))
         raise NotImplementedError("Unreachable code")
 
 
@@ -152,8 +190,11 @@ async def worker(
 
     try:
         data = await response.json()
-        messages.extend(data["messages"])
-        tools = data["tools"]
+        messages.extend(data.get("messages") or [])
+        tools = data.get("tools") or []
+        if not messages or data.get("finish"):
+            state.latency_s = round(time.monotonic() - t0, 3)
+            return messages, RuntimeError(f"Task worker failed during start_sample (finish={data.get('finish')}, empty messages)"), session_id, _episode_metadata(state)
         task_type = infer_task_type_from_name(args.task_name[0], tools)
         state.task_type = task_type
         state.round_limit = default_round_limit(task_type)
@@ -247,6 +288,7 @@ def _episode_metadata(state: EpisodeState) -> Dict[str, Any]:
     return {
         "condition": state.condition,
         "task_type": state.task_type,
+        "temperature": args.temperature,
         "env_calls": state.env_calls,
         "verify_gate_fired": state.verify_gate_fired,
         "verify_gate_skipped_low_budget": state.verify_gate_skipped_low_budget,
@@ -277,7 +319,7 @@ def parse_model_name(name):
         model_name = match.group(1)
     else:
         model_name = name
-    return model_name
+    return model_name.replace("/", "__")
 
 
 async def run_tasks(args):
@@ -319,6 +361,13 @@ async def run_tasks(args):
     if args.index:
         task_indices = [args.index]
         args.runs = 1
+    elif getattr(args, "indices_file", None):
+        with open(args.indices_file, "r", encoding="utf-8") as f:
+            loaded = json.load(f)
+        if isinstance(loaded, dict):
+            task_indices = list(loaded[args.task_name[0]])
+        else:
+            task_indices = list(loaded)
     elif args.range:
         start, end = map(int, args.range.split(","))
         task_indices = [i for i in range(start, end)]
@@ -452,10 +501,9 @@ async def task(output_file, agent, task_indices, model_name, concurrency, memory
                         now_ts,
                         sid,
                     ]
-                if len(df) % 25 == 0:
-                    df.sort_values(by=["model", "condition", "task_index", "run_number"]).to_json(
-                        output_file, index=False, orient="records", lines=True, date_format="iso"
-                    )
+                df.sort_values(by=["model", "condition", "task_index", "run_number"]).to_json(
+                    output_file, index=False, orient="records", lines=True, date_format="iso"
+                )
 
         coroutines = []
         for run_number in range(1, args.runs + 1):
@@ -469,11 +517,12 @@ async def task(output_file, agent, task_indices, model_name, concurrency, memory
             f"({len(task_indices)} items, {args.runs} runs, concurrency={concurrency})",
             flush=True,
         )
-        if coroutines:
-            await tqdm.gather(*coroutines, position=0)
-
-        df = df.sort_values(by=["model", "condition", "task_index", "run_number"])
-        df.to_json(output_file, index=False, orient="records", lines=True, date_format="iso")
+        try:
+            if coroutines:
+                await tqdm.gather(*coroutines, position=0)
+        finally:
+            df = df.sort_values(by=["model", "condition", "task_index", "run_number"])
+            df.to_json(output_file, index=False, orient="records", lines=True, date_format="iso")
 
         valid_df = df[df["result"] != "error"]
         valid = len(valid_df)
@@ -505,6 +554,7 @@ if __name__ == "__main__":
     parser.add_argument("-f", "--output-file", type=str, default=None, help="output file path/name to write or resume")
     parser.add_argument("--extra-body", type=str, default="{}", help="JSON object merged into every chat request")
     parser.add_argument("--limit", type=int, default=None, help="only run the first N sample indices")
+    parser.add_argument("--indices-file", type=str, default=None, help="JSON file of task indices (list or {task_name: list})")
     parser.add_argument("--sample-frac", type=float, default=None, help="random deterministic fraction of indices to sample")
     parser.add_argument("--seed", type=int, default=42, help="random seed for --sample-frac")
     parser.add_argument("--condition", type=str, default="c0", choices=VALID_CONDITIONS, help="Proposal 3 condition")

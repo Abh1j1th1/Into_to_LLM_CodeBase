@@ -53,25 +53,34 @@ def compute_baseline_scores(
 
     env_names = sorted(set(item_envs))
     env_scores = {}
+    env_has_obs = {}
     env_pool_means = {}
     for env in env_names:
         idx = np.array([e == env for e in item_envs])
+        has_obs = np.array([(idx & obs_mask[m]).any() for m in range(M)])
         scores_m = np.array([
-            y_clean[m, idx & obs_mask[m]].mean() if (idx & obs_mask[m]).any() else 0.0
+            y_clean[m, idx & obs_mask[m]].mean() if has_obs[m] else np.nan
             for m in range(M)
         ])
         env_scores[env] = scores_m
-        pool_mean = float(scores_m.mean()) if M > 0 else 1.0
+        env_has_obs[env] = has_obs
+        valid_pool = scores_m[has_obs]
+        pool_mean = float(valid_pool.mean()) if len(valid_pool) > 0 else 1.0
         env_pool_means[env] = max(pool_mean, 1e-3)
 
-    macro_mean = np.mean(np.stack([env_scores[e] for e in env_names], axis=0), axis=0)
+    macro_mean = np.array([
+        np.nanmean([env_scores[e][m] for e in env_names]) if any(env_has_obs[e][m] for e in env_names) else 0.0
+        for m in range(M)
+    ])
 
     raw_weights = {e: 1.0 / env_pool_means[e] for e in env_names}
-    w_sum = sum(raw_weights.values())
-    norm_weights = {e: raw_weights[e] / w_sum for e in env_names}
     reciprocal_weighted = np.zeros(M, dtype=float)
-    for e in env_names:
-        reciprocal_weighted += norm_weights[e] * env_scores[e]
+    for m in range(M):
+        obs_envs = [e for e in env_names if env_has_obs[e][m]]
+        if not obs_envs:
+            continue
+        w_sum_m = sum(raw_weights[e] for e in obs_envs)
+        reciprocal_weighted[m] = sum((raw_weights[e] / w_sum_m) * env_scores[e][m] for e in obs_envs)
 
     return {
         "micro_mean": micro_mean,
@@ -91,7 +100,7 @@ def fit_bayesian_irt(
     prior_theta_sd: float = 1.0,
     prior_b_sd: float = 2.0,
     prior_log_a_sd: float = 0.5,
-    traj_weight: float = 1.0,
+    traj_weight: float = 0.25,
 ) -> IRTFitResult:
     """Fit Bayesian 1PL, 2PL, or Trajectory-Aware 2PL IRT via regularized MAP + Laplace SE.
 
@@ -140,7 +149,7 @@ def fit_bayesian_irt(
         x0[M + I + n_a] = float(np.mean(lz_obs))
         x0[M + I + n_a + 1] = 0.0  # log(alpha1=1.0)
 
-    sigma_z2 = 1.0
+    sigma_z2 = 2.0
 
     def unpack(x: np.ndarray):
         theta = x[:M]
@@ -148,9 +157,8 @@ def fit_bayesian_irt(
         log_a = x[M + I : M + I + n_a] if two_pl else np.zeros(I, dtype=float)
         a = np.exp(np.clip(log_a, -2.5, 2.5))
         alpha0 = x[M + I + n_a] if use_traj else 0.0
-        log_alpha1 = x[M + I + n_a + 1] if use_traj else 0.0
-        alpha1 = math.exp(max(-3.0, min(3.0, float(log_alpha1)))) if use_traj else 0.0
-        return theta, b, log_a, a, alpha0, log_alpha1, alpha1
+        alpha1 = float(x[M + I + n_a + 1]) if use_traj else 0.0
+        return theta, b, log_a, a, alpha0, alpha1, alpha1
 
     def nll_and_grad(x: np.ndarray) -> Tuple[float, np.ndarray]:
         theta, b, log_a, a, alpha0, log_alpha1, alpha1 = unpack(x)
@@ -180,7 +188,7 @@ def fit_bayesian_irt(
             if two_pl:
                 np.add.at(grad[M + I : M + I + I], i_z, d_eta_z * eta_z)
             grad[M + I + n_a] += traj_weight * np.sum(res) / sigma_z2
-            grad[M + I + n_a + 1] += traj_weight * np.sum(res * alpha1 * eta_z) / sigma_z2
+            grad[M + I + n_a + 1] += traj_weight * np.sum(res * eta_z) / sigma_z2
 
         # Gaussian priors (plus weak zero-sum anchor on theta to fix scale/shift)
         nll += 0.5 * np.sum(theta * theta) / (prior_theta_sd ** 2)

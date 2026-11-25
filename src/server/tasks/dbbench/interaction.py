@@ -148,7 +148,7 @@ class MySQLDatabase(Database):
                 pass
             self._conn = None
 
-        max_tries = 5
+        max_tries = 20
         for attempt in range(max_tries):
             try:
                 self.logger.info(f"Connecting to MySQL at {self.container_ip} (Attempt {attempt + 1}/{max_tries})...")
@@ -165,7 +165,7 @@ class MySQLDatabase(Database):
             except Exception as e:
                 self.logger.error(f"MySQL connection error: {e}")
                 if attempt < max_tries - 1:
-                    await asyncio.sleep(1)
+                    await asyncio.sleep(1.5)
 
         raise ConnectionError("Failed to connect to MySQL after multiple attempts.")
 
