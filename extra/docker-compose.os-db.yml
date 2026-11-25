@@ -1,0 +1,56 @@
+# Linux/macOS portable Docker Compose stack trimmed to dbbench-std and os-std (444 items).
+# Uses bridge networking and published port 5020 so it works identically on Linux and macOS
+# without pulling alfworld / webshop / knowledgegraph / freebase.
+#
+# Run from the project root:
+#   docker compose -f extra/docker-compose.os-db.yml up -d
+#   docker compose -f extra/docker-compose.os-db.yml down
+name: agentbench-fc
+
+services:
+
+  controller:
+    image: jingbh/agentrl-controller:latest
+    container_name: agentrl-controller
+    command:
+      - controller
+    ports:
+      - "5020:5020"
+
+  redis:
+    image: redis:7
+    container_name: redis
+
+  dbbench-std:
+    build:
+      context: ..
+      dockerfile: src/server/tasks/dbbench/Dockerfile
+    command: --controller http://controller:5020/api dbbench-std
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - DBBENCH_STD_PARAMETERS_ENV_OPTIONS_NETWORK_NAME=agentbench-fc_default
+      - DBBENCH_STD_PARAMETERS_ENV_OPTIONS_STATE_OPTIONS_CONNECTION_HOST=redis
+    deploy:
+      mode: replicated
+      replicas: 1
+    depends_on:
+      - controller
+      - redis
+
+  os_interaction-std:
+    build:
+      context: ..
+      dockerfile: src/server/tasks/os_interaction/Dockerfile
+    command: --controller http://controller:5020/api os-std
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - OS_STD_PARAMETERS_ENV_OPTIONS_NETWORK_NAME=agentbench-fc_default
+      - OS_STD_PARAMETERS_ENV_OPTIONS_STATE_OPTIONS_CONNECTION_HOST=redis
+    deploy:
+      mode: replicated
+      replicas: 1
+    depends_on:
+      - controller
+      - redis

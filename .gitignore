@@ -19,3 +19,4 @@ src/server/tasks/card_game/result
 analysis
 # local Python virtual environment
 .venv/
+.pytest_cache/
