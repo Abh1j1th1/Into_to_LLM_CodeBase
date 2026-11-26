@@ -1,4 +1,30 @@
-# AgentBench
+# AgentBench FC — Group 12 (Task 4 & Task 5)
+
+> **Origin & Branch**: Adapted from [THUDM/AgentBench](https://github.com/THUDM/AgentBench) (FC / AgentRL release) and [UrAvgRahul/AgentBench_Iteration2](https://github.com/UrAvgRahul/AgentBench_Iteration2) (`iteration2.0`).  
+> **Hardware**: Local Windows 11 evaluation (Ryzen 7 7840HS, 16 GB RAM, RTX 3050 6 GB) via Ollama (`qwen2.5:3b`, `qwen2.5:7b`, `gemma4:12b`).
+
+## Key Deliverables & Files
+- **Task 5 IEEE PDF Report (with figures & tables)**: [`eval/TASK5_IEEE_REPORT.pdf`](eval/TASK5_IEEE_REPORT.pdf) ([HTML source](eval/TASK5_IEEE_REPORT.html), [Markdown](eval/TASK5_PAPER.md), [generator](eval/build_ieee_report.py))
+- **Task 4 Iteration 2 Findings & 2-Round Refinement Log**: [`eval/ITERATION2_FINDINGS.md`](eval/ITERATION2_FINDINGS.md)
+- **Proposal 3 (Failure-Aware Agent & Verify Gate `c0`–`c4`)**: [`eval/conditions.py`](eval/conditions.py), [`eval/server_agent.py`](eval/server_agent.py), [`eval/run_iteration2.py`](eval/run_iteration2.py), [`eval/analyze_proposal3.py`](eval/analyze_proposal3.py)
+- **Proposal 1 (Trajectory-Aware Bayesian IRT)**: [`eval/irt.py`](eval/irt.py), [`eval/analyze_proposal1.py`](eval/analyze_proposal1.py)
+- **Verified Iteration 2 Outputs (126 `T=0.0` episodes on `eval/stratified_40.json`)**: [`eval/results/iteration2/`](eval/results/iteration2/) ([`proposal3_report.md`](eval/results/iteration2/proposal3_report.md), [`proposal3_summary.json`](eval/results/iteration2/proposal3_summary.json))
+- **Protocol & Docker Setup Notes**: [`RUN_NOTES.md`](RUN_NOTES.md), [`ARCHITECTURE.md`](ARCHITECTURE.md), [`extra/docker-compose.os-db.yml`](extra/docker-compose.os-db.yml)
+
+## Quick Reproduction (Analysis & Report)
+```powershell
+# Re-run Proposal 3 statistical analysis on the included Iteration 2 JSONL results
+.venv\Scripts\python eval/analyze_proposal3.py eval/results/iteration2 `
+  --out-json eval/results/iteration2/proposal3_summary.json `
+  --out-md eval/results/iteration2/proposal3_report.md
+
+# Rebuild the IEEE HTML report (then print to PDF via Edge/Chrome headless)
+.venv\Scripts\python eval/build_ieee_report.py
+```
+
+---
+
+# AgentBench (Upstream README)
 
 ![](./assets/cover.jpg)
 
