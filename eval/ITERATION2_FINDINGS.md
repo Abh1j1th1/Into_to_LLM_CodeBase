@@ -1,8 +1,8 @@
 # Task 4 – Iteration 2 Empirical Findings (Group 12)
 
-Evaluated live on AgentBench FC (`dbbench-std` + `os-std` Docker environments) across **126 valid temperature-0 episodes** (`sampled_rows_excluded = 0`) on the stratified 40-item benchmark ([stratified_40.json](stratified_40.json): 20 DB + 20 OS items) using local Ollama models (`OLLAMA_CONTEXT_LENGTH=8192`):
+Evaluated live on AgentBench FC (`dbbench-std` + `os-std` Docker environments) across **146 valid temperature-0 episodes** (`sampled_rows_excluded = 0`) on the stratified 40-item benchmark ([stratified_40.json](stratified_40.json): 20 DB + 20 OS items) using local Ollama models (`OLLAMA_CONTEXT_LENGTH=8192`):
 - `qwen2.5:3b` (`100% GPU`): complete `c0` + `c3` (`80` episodes).
-- `qwen2.5:7b` (`21%/79% CPU/GPU`): partial `c0` (`38` episodes: 20 DB + 18 OS; stopped after `os-std` index `76` hung twice).
+- `qwen2.5:7b` (`21%/79% CPU/GPU`): `c0` (`38` episodes: 20 DB + 18 OS; stopped after `os-std` index `76` hung twice) + complete DB `c3` (`20` episodes).
 - `gemma4:12b` (`8.0 GB` on 6 GB VRAM): partial `c0` (`8` DB episodes; stopped after hanging twice on DB indices `67` and `93`).
 
 ---
@@ -24,6 +24,7 @@ All comparisons are against the repo's own `c0` baseline under identical protoco
 | `qwen2.5:7b` | `c0` | OVERALL | 38 | 28.9% | — | 36.8% | 7.9% | 2.53 | 22.3% | 57.9% | — | — |
 | `qwen2.5:7b` | `c0` | DB | 20 | 45.0% | — | 10.0% | 0.0% | 2.75 | 31.7% | 85.0% | — | — |
 | `qwen2.5:7b` | `c0` | OS | 18 | 11.1% | — | 66.7% | 16.7% | 2.28 | 11.8% | 27.8% | — | — |
+| `qwen2.5:7b` | `c3` | DB | 20 | 40.0% | 20: 45.0% -> 40.0% | 0.0% | 5.0% | 4.65 | 37.3% | 100.0% | 1.0000 | +0 / -1 |
 | `gemma4:12b` | `c0` | OVERALL | 8 | 50.0% | — | 50.0% | 12.5% | 3.25 | 5.8% | 25.0% | — | — |
 | `gemma4:12b` | `c0` | DB | 8 | 50.0% | — | 50.0% | 12.5% | 3.25 | 5.8% | 25.0% | — | — |
 
