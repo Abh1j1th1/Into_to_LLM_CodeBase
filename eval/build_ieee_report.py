@@ -237,8 +237,8 @@ def svg_failure_modes(data: dict) -> str:
                 continue
             w = bar_w * (cnt / n)
             lines.append(f'<rect x="{x_cur:.1f}" y="{y}" width="{w:.1f}" height="{bar_h}" fill="{col}"/>')
-            if w >= 14:
-                lines.append(f'<text x="{x_cur + w / 2:.1f}" y="{y + 14}" text-anchor="middle" font-size="8" font-weight="bold" fill="#fff">{cnt}</text>')
+            if w >= 5:
+                lines.append(f'<text x="{x_cur + w / 2:.1f}" y="{y + 14}" text-anchor="middle" font-size="7.2" font-weight="bold" fill="#fff">{cnt}</text>')
             x_cur += w
 
     for j, (_, cname, col) in enumerate(cats):
@@ -452,14 +452,14 @@ def main() -> None:
 <body>
 
 <div class="title-block">
-  <h1 class="paper-title">Failure-Aware Tool-Use Agents and Trajectory-Aware Evaluation on AgentBench FC</h1>
+  <h1 class="paper-title">Failure-Aware Tool-Use Agents on AgentBench FC: Empirical Verify-Gate Study and IRT Scaffolding</h1>
   <p class="authors"><strong>Group 12:</strong> Abhijith S Kumar (2024A7PS0557G), Joseph Sebastian (2024A8PS0681G), Rahul Sunil (2024A7PS0050G), D A Pavan Shenoy (2024A7PS0584G), Shreyash Singh (2024ADPS0860G)</p>
   <p class="affil">Department of Computer Science &amp; Information Systems, BITS Pilani K. K. Birla Goa Campus</p>
 </div>
 
 <div class="two-col">
 
-  <p class="abstract"><strong><em>Abstract</em>&mdash;Evaluating Large Language Models (LLMs) as autonomous tool-using agents requires multi-turn interaction in stateful environments, yet standard benchmarks rely on single greedy runs, coarse symptom-level failure buckets, and ad hoc reciprocal-weighted aggregation. In this work, we consolidate our end-to-end investigation of AgentBench Function Calling (FC) across <code>dbbench-std</code> and <code>os-std</code>. Guided by an Iteration 1 pilot (<code>Qwen3-8B</code>, <em>N</em> = 10/task) that revealed 9/10 OS failures stemmed from answering after a single unverified command rather than Task-Limit-Exceeded (TLE) loops, we evolved our design into a client-side failure-aware intervention suite (<code>c0</code>&ndash;<code>c4</code>) featuring a budget-aware targeted verify gate (<code>c3</code>) alongside a Trajectory-Aware Bayesian Item Response Theory (IRT) scoring framework. In Iteration 2, we evaluated local open-weight models via Ollama on a stratified 40-item subset (20 DB + 20 OS, <em>T</em> = 0.0). On <code>qwen2.5:3b</code> (80 episodes), <code>c3</code> reliably enforced multi-step verification (reducing &le;1-command answers from 50.0% to 10.0%, gate fired on 67.5% of episodes) at ~2&times; prompt-token (4,241.4 &rarr; 8,403.9) and latency (16.30 s &rarr; 28.42 s) cost, without a statistically significant accuracy gain (27.5% &rarr; 25.0%, McNemar exact <em>p</em> = 1.0000). Larger local models (<code>qwen2.5:7b</code> at 28.9% <code>c0</code> over 38 episodes; <code>gemma4:12b</code> at 50.0% DB <code>c0</code> over 8 episodes) hit controller session-expiration timeouts under 6 GB VRAM constraints.</strong></p>
+  <p class="abstract"><strong><em>Abstract</em>&mdash;Evaluating Large Language Models (LLMs) as autonomous tool-using agents requires multi-turn interaction in stateful environments, yet standard benchmarks rely on single greedy runs, coarse symptom-level failure buckets, and ad hoc reciprocal-weighted aggregation. In this work, we consolidate our end-to-end investigation of AgentBench Function Calling (FC) across <code>dbbench-std</code> and <code>os-std</code>. Guided by an Iteration 1 pilot (<code>Qwen3-8B</code>, <em>N</em> = 10/task) that revealed 9/10 OS failures stemmed from answering after a single unverified command rather than Task-Limit-Exceeded (TLE) loops, we evolved our design into a client-side failure-aware intervention suite (<code>c0</code>&ndash;<code>c4</code>) featuring a budget-aware targeted verify gate (<code>c3</code>), alongside implemented (but unevaluated) Trajectory-Aware Bayesian Item Response Theory (IRT) scaffolding. In Iteration 2, we evaluated local open-weight models via Ollama on a stratified 40-item subset (20 DB + 20 OS, <em>T</em> = 0.0). Across 163 valid episodes, <code>qwen2.5:3b</code> (80 episodes) showed that <code>c3</code> reliably enforced multi-step verification (reducing &le;1-command answers from 50.0% to 10.0%, gate fired on 67.5% of episodes) at ~2&times; prompt-token (4,241.4 &rarr; 8,403.9) and latency (16.30 s &rarr; 28.42 s) cost, without a statistically significant accuracy gain (27.5% &rarr; 25.0%, McNemar exact <em>p</em> = 1.0000). Paired DBBench runs on <code>qwen2.5:7b</code> (45.0% &rarr; 40.0%, <em>p</em> = 1.0000) and partial <code>gemma4:12b</code> (8 paired: 50.0% &rarr; 50.0%, <em>p</em> = 1.0000) showed the same pattern while hitting controller session-expiration timeouts under 6 GB VRAM constraints. Proposal 1 IRT analysis was skipped because the local runs did not cover a multi-model/condition grid.</strong></p>
 
   <p class="keywords"><strong><em>Index Terms</em>&mdash;LLM agents, tool use, AgentBench FC, verification gate, failure memory, Bayesian IRT, local inference.</strong></p>
 
@@ -473,7 +473,7 @@ def main() -> None:
   <ol>
     <li><strong>AgentRL FC Protocol Alignment:</strong> Diagnosed and resolved v0.2-to-FC incompatibilities (AgentRL controller on port <code>5020</code>, <code>session_id</code> headers, incremental <code>messages</code>, OpenAI tool schemas, LF worker scripts, and <code>aiodocker==0.24.0</code>).</li>
     <li><strong>Client-Side Failure-Aware Suite (<code>c0</code>&ndash;<code>c4</code>):</strong> Implemented modular interventions in <code>eval/conditions.py</code>&mdash;repeated-action warnings (<code>c1</code>), state-conditioned failure memory (<code>c2</code>), a budget-aware targeted verify gate (<code>c3</code>), and their combination (<code>c4</code>)&mdash;without altering environment grading.</li>
-    <li><strong>Trajectory-Aware Bayesian IRT Framework:</strong> Implemented 1PL, 2PL, and trajectory-aware 2PL IRT models (<code>eval/irt.py</code>) with Gaussian priors and Laplace uncertainty, alongside temperature-filtered paired McNemar analysis (<code>eval/analyze_proposal3.py</code>).</li>
+    <li><strong>Trajectory-Aware Bayesian IRT Scaffolding (Implemented, Not Evaluated):</strong> Implemented 1PL, 2PL, and trajectory-aware 2PL IRT models (<code>eval/irt.py</code>, <code>eval/analyze_proposal1.py</code>) with Gaussian priors and Laplace uncertainty, alongside temperature-filtered paired McNemar analysis (<code>eval/analyze_proposal3.py</code>); IRT evaluation was skipped due to insufficient multi-model/condition coverage.</li>
     <li><strong>Empirical Local-Hardware Evaluation &amp; Refinement Log:</strong> Executed 163 verified <em>T</em> = 0.0 episodes across <code>qwen2.5:3b</code>, <code>qwen2.5:7b</code>, and <code>gemma4:12b</code> on <code>stratified_40.json</code>, documenting exact McNemar tests, compute-latency trade-offs, session-timeout bottlenecks, and two LLM refinement rounds.</li>
   </ol>
 
@@ -484,7 +484,7 @@ def main() -> None:
   <p>AgentBench [1] evaluates 29 LLMs across eight interactive environments using text-prompted interaction and reciprocal-weighted scoring, later updated to the October 2025 Function Calling (FC) release on AgentRL. While AgentBench establishes capability gaps between commercial and open-weight models, its single-run greedy protocol motivates budget-efficient, statistically grounded re-evaluation.</p>
 
   <h3 class="subsec">B. Trajectory-Aware Evaluation and Item Response Theory</h3>
-  <p>Recent work on Efficient SWE Agent Benchmarking introduces PTA-IRT [2], demonstrating that execution trajectories (search paths, intermediate diffs, and logs) serve as privileged information within an Item Response Theory framework to recover full-benchmark rankings from small calibration subsets (Kendall&rsquo;s &tau; &approx; 0.89, Spearman&rsquo;s &rho; &approx; 0.97). We adapt this paradigm from single-domain SWE tasks to AgentBench&rsquo;s multi-environment (DB + OS) setting.</p>
+  <p>Recent work on Efficient SWE Agent Benchmarking introduces PTA-IRT [2], demonstrating that execution trajectories (search paths, intermediate diffs, and logs) serve as privileged information within an Item Response Theory framework to recover full-benchmark rankings from small calibration subsets (Kendall&rsquo;s &tau; &approx; 0.89, Spearman&rsquo;s &rho; &approx; 0.97). We implement this paradigm as scaffolding for AgentBench&rsquo;s multi-environment (DB + OS) setting. Separately, the Task 4 assignment brief lists four background papers on automated scientific discovery and agentic optimization (DeepScientist <code>arXiv:2509.26603</code>, EvoScientist <code>arXiv:2603.08127</code>, AutoSOTA <code>arXiv:2604.05550</code>, and Arbor <code>arXiv:2606.11926</code>); none were read or used in our implementation.</p>
 
   <h3 class="subsec">C. Failure-Aware Agents, Self-Correction, and Automated Judges</h3>
   <p>Huang et al. [4] show that LLMs rarely self-correct reasoning from generic prompts without external feedback, explaining why our Iteration 1 generic verify prompt failed to flip any outcome and motivating our structured, independent-command verify gate (<code>c3</code>). Separately, mechanistic interpretability of LLM-as-a-Judge models (Themis, Prometheus) in &ldquo;Beyond Scores&rdquo; [3] reveals two-stage evaluation circuits (early-layer discrepancy routing and late-layer MLP integration), motivating our dropped Proposal 2 judge-auditing line.</p>
@@ -509,7 +509,7 @@ def main() -> None:
   <h2 class="sec">IV. Methodology</h2>
 
   <h3 class="subsec">A. Dataset and Environments</h3>
-  <p>Evaluations run live on Dockerized <code>dbbench-std</code> (MySQL containers, 300 items) and <code>os-std</code> (Ubuntu bash containers, 144 items) orchestrated by <code>agentrl-controller</code> and Redis. Under consumer 6 GB VRAM constraints, we evaluate on the stratified 40-item benchmark (<code>eval/stratified_40.json</code>: 20 DB across SQL types + 20 OS across directories <code>1</code>&ndash;<code>7</code>) at greedy decoding (<em>T</em> = 0.0, concurrency 1, <code>OLLAMA_CONTEXT_LENGTH=8192</code>).</p>
+  <p>Evaluations run live on Dockerized <code>dbbench-std</code> (MySQL containers, 300 items) and <code>os-std</code> (Ubuntu bash containers, 144 items) orchestrated by <code>agentrl-controller</code> and Redis. Under consumer 6 GB VRAM constraints, we evaluate on the stratified 40-item benchmark (<code>eval/stratified_40.json</code>: 20 DB across SQL types + 20 OS across directories <code>1</code>&ndash;<code>7</code>) at greedy decoding (<em>T</em> = 0.0, concurrency 1, <code>OLLAMA_CONTEXT_LENGTH=8192</code> verified active via <code>ollama ps</code>).</p>
 
   <h3 class="subsec">B. Failure-Aware Agent Conditions (<code>c0</code>&ndash;<code>c4</code>)</h3>
   <p>All conditions are client-side wrappers in <code>eval/conditions.py</code>: <code>c0</code> (baseline), <code>c1</code> (repeated-action warning for exact or ROUGE-L <em>F</em><sub>1</sub> &ge; 0.85 matches), <code>c2</code> (state-conditioned failure memory for execution errors, empty non-mutating outputs, truncation, and repeats), <code>c3</code> (targeted verify gate holding the first commit when &ge;2 rounds remain), and <code>c4</code> (<code>c2</code> + <code>c3</code>).</p>
@@ -567,13 +567,13 @@ def main() -> None:
           <td><strong>R1</strong></td>
           <td>Legacy v0.2 client rejected by FC controller; <code>-T</code> <code>KeyError</code>; CRLF <code>*.sh</code>; host-net Compose.</td>
           <td>Adopt <code>server_agent.py</code> (port <code>5020</code>), LF <code>.gitattributes</code>, sanitize tool messages.</td>
-          <td><code>dbbench-std</code> (300) &amp; <code>os-std</code> (144) registered; 126 <em>T</em>=0 runs logged.</td>
+          <td><code>dbbench-std</code> (300) &amp; <code>os-std</code> (144) registered; 163 <em>T</em>=0 runs logged.</td>
         </tr>
         <tr>
           <td><strong>R2</strong></td>
           <td><em>T</em>&gt;0 rows mixed into <code>c0</code>; <code>c3</code> overclaimed as &ldquo;eliminating guessing&rdquo;; unverified gaps.</td>
           <td>Add <code>filename_temperature</code> filter &amp; <code>Paired</code> McNemar; reword to &ldquo;gate fired.&rdquo;</td>
-          <td><code>sampled_rows_excluded=0</code>; exact <em>p</em>=1.0000 &amp; compute cost reported.</td>
+          <td>Filter added (no <em>T</em>&gt;0 rows in this run&rsquo;s data); exact <em>p</em>=1.0000 &amp; compute cost reported.</td>
         </tr>
       </tbody>
     </table>
@@ -590,6 +590,10 @@ def main() -> None:
     <li>[3] &ldquo;Beyond Scores: Understanding LLM-as-a-Judge Mechanisms in Summarization Evaluation,&rdquo; <em>arXiv:2609.01604</em>, 2026.</li>
     <li>[4] J. Huang <em>et al.</em>, &ldquo;Large Language Models Cannot Self-Correct Reasoning Yet,&rdquo; in <em>Proc. ICLR</em>, 2024.</li>
     <li>[5] P. Wu <em>et al.</em>, &ldquo;Uncovering Understanding-Generation Synergy in Native Unified Multimodal Models,&rdquo; <em>arXiv:2609.01607</em>, 2026 (filtered out during gap mapping).</li>
+    <li>[6] &ldquo;DeepScientist,&rdquo; <em>arXiv:2509.26603</em> (unread Task 4 background reference).</li>
+    <li>[7] &ldquo;EvoScientist,&rdquo; <em>arXiv:2603.08127</em> (unread Task 4 background reference).</li>
+    <li>[8] &ldquo;AutoSOTA,&rdquo; <em>arXiv:2604.05550</em> (unread Task 4 background reference).</li>
+    <li>[9] &ldquo;Arbor,&rdquo; <em>arXiv:2606.11926</em> (unread Task 4 background reference).</li>
   </ol>
 
 </div>
