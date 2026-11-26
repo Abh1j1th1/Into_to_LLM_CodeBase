@@ -7,12 +7,17 @@ Computes:
 - <=1-command answer rate, TLE rate, exact repeat rate, AgentBench P(10, 0.8) repetition rate
 - Verification flip breakdown (wrong->right helped vs right->wrong harmed)
 - Failure taxonomy counts, token overhead, and latency
+
+Rows sampled at temperature > 0 (the Proposal 1 variance runs, e.g. *__t0.7_k3.jsonl) are
+EXCLUDED here so that the c0 baseline is a pure temperature-0 baseline.
 """
 from __future__ import annotations
 
 import argparse
 import json
 import math
+import re
+import sys
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
@@ -20,6 +25,14 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 from scipy.stats import binomtest
 
 from trajectory_parser import TrajectoryFeatures, parse_jsonl_file
+
+_TEMP_RE = re.compile(r"__t(\d+(?:\.\d+)?)(?=_|$)")
+
+
+def filename_temperature(path: Path) -> Optional[float]:
+    """Read the temperature from names like dbbench-std__c0__t0.jsonl or ...__c0__t0.7_k3.jsonl."""
+    m = _TEMP_RE.search(path.stem.lower())
+    return float(m.group(1)) if m else None
 
 
 def wilson_ci(k: int, n: int, z: float = 1.96) -> Tuple[float, float]:
@@ -137,20 +150,30 @@ def _dedup_run1(feats: List[TrajectoryFeatures]) -> Dict[str, int]:
 
 def analyze_files(paths: Iterable[Path]) -> Dict[str, Any]:
     all_feats: List[TrajectoryFeatures] = []
+    sampled_excluded = 0
     for p in sorted(paths):
         cond_hint = infer_condition_from_filename(p)
+        file_temp = filename_temperature(p) or 0.0
         feats = parse_jsonl_file(p)
         for f in feats:
+            # Exclude temperature > 0 rows (Proposal 1 variance runs) from the c0..c4 comparison.
+            row_temp = f.temperature if f.temperature > 0 else file_temp
+            if row_temp > 0:
+                sampled_excluded += 1
+                continue
             # Prefer explicit non-default condition or filename-inferred label (e.g. c2_from_db)
             if cond_hint and (f.condition == "c0" or cond_hint.startswith("c2_from_")):
                 f.condition = cond_hint
-        all_feats.extend(feats)
+            all_feats.append(f)
+
+    if sampled_excluded:
+        print(f"[analyze_proposal3] excluded {sampled_excluded} rows sampled at temperature > 0", file=sys.stderr)
 
     by_model: Dict[str, Dict[str, List[TrajectoryFeatures]]] = defaultdict(lambda: defaultdict(list))
     for f in all_feats:
         by_model[f.model][f.condition].append(f)
 
-    report: Dict[str, Any] = {"models": {}}
+    report: Dict[str, Any] = {"models": {}, "sampled_rows_excluded": sampled_excluded}
     for model, cond_map in sorted(by_model.items()):
         model_report: Dict[str, Any] = {"conditions": {}, "mcnemar_vs_c0": {}}
         base_feats = cond_map.get("c0", [])
@@ -183,11 +206,16 @@ def analyze_files(paths: Iterable[Path]) -> Dict[str, Any]:
 
 def format_markdown_report(report: Dict[str, Any]) -> str:
     lines = ["# Proposal 3 Evaluation Report (Failure-Aware Agent Conditions)", ""]
+    lines.append(
+        "Temperature-0 runs only. `Paired` = matched items vs c0 (N: c0% -> condition%); "
+        "use it, not the unmatched Success Rate, to compare a condition with c0."
+    )
+    lines.append("")
     for model, mdata in report["models"].items():
         lines.append(f"## Model: `{model}`")
         lines.append("")
-        lines.append("| Condition | Split | N | Success Rate | <=1 Cmd Rate | TLE Rate | Mean Env Calls | Repeat Rate | P(10,0.8) | McNemar p vs c0 | Helped / Harmed |")
-        lines.append("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|")
+        lines.append("| Condition | Split | N | Success Rate | Paired | <=1 Cmd Rate | TLE Rate | Mean Env Calls | Repeat Rate | P(10,0.8) | McNemar p vs c0 | Helped / Harmed |")
+        lines.append("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|")
         for cond, cdata in mdata["conditions"].items():
             mcn_all = mdata["mcnemar_vs_c0"].get(cond, {})
             for split in ("overall", "db", "os"):
@@ -197,8 +225,12 @@ def format_markdown_report(report: Dict[str, Any]) -> str:
                 mcn = mcn_all.get(split)
                 p_str = f"{mcn['mcnemar_exact_p']:.4f}" if mcn else "—"
                 hh_str = f"+{mcn['helped_wrong_to_right']} / -{mcn['harmed_right_to_wrong']}" if mcn else "—"
+                paired_str = (
+                    f"{mcn['n_paired']}: {mcn['base_success_rate']*100:.1f}% -> {mcn['cond_success_rate']*100:.1f}%"
+                    if mcn else "—"
+                )
                 lines.append(
-                    f"| `{cond}` | {split.upper()} | {s['n']} | {s['success_rate']*100:.1f}% | "
+                    f"| `{cond}` | {split.upper()} | {s['n']} | {s['success_rate']*100:.1f}% | {paired_str} | "
                     f"{s['answered_le_1_cmd_rate']*100:.1f}% | {s['tle_rate']*100:.1f}% | "
                     f"{s['mean_env_calls']:.2f} | {s['mean_exact_repeat_rate']*100:.1f}% | "
                     f"{s['rouge_l_ge_08_rate']*100:.1f}% | {p_str} | {hh_str} |"
