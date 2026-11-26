@@ -107,6 +107,7 @@ def svg_success_rates(data: dict) -> str:
         ("qwen2.5:7b", "c3", "db", "7B c3 DB", "#0284c7"),
         ("qwen2.5:7b", "c0", "os", "7B c0 OS", "#0d9488"),
         ("gemma4:12b", "c0", "db", "12B c0 DB*", "#d97706"),
+        ("gemma4:12b", "c3", "db", "12B c3 DB*", "#ea580c"),
     ]
     for m, c, sp, lbl, col in specs:
         g = models[m]["conditions"][c][sp]
@@ -263,6 +264,7 @@ def build_table_rows(data: dict) -> str:
         ("qwen2.5:7b", "c0", "os", "OS"),
         ("qwen2.5:7b", "c3", "db", "DB"),
         ("gemma4:12b", "c0", "db", "DB*"),
+        ("gemma4:12b", "c3", "db", "DB*"),
     ]
     out = []
     for m, c, sp, sp_lbl in order:
@@ -472,7 +474,7 @@ def main() -> None:
     <li><strong>AgentRL FC Protocol Alignment:</strong> Diagnosed and resolved v0.2-to-FC incompatibilities (AgentRL controller on port <code>5020</code>, <code>session_id</code> headers, incremental <code>messages</code>, OpenAI tool schemas, LF worker scripts, and <code>aiodocker==0.24.0</code>).</li>
     <li><strong>Client-Side Failure-Aware Suite (<code>c0</code>&ndash;<code>c4</code>):</strong> Implemented modular interventions in <code>eval/conditions.py</code>&mdash;repeated-action warnings (<code>c1</code>), state-conditioned failure memory (<code>c2</code>), a budget-aware targeted verify gate (<code>c3</code>), and their combination (<code>c4</code>)&mdash;without altering environment grading.</li>
     <li><strong>Trajectory-Aware Bayesian IRT Framework:</strong> Implemented 1PL, 2PL, and trajectory-aware 2PL IRT models (<code>eval/irt.py</code>) with Gaussian priors and Laplace uncertainty, alongside temperature-filtered paired McNemar analysis (<code>eval/analyze_proposal3.py</code>).</li>
-    <li><strong>Empirical Local-Hardware Evaluation &amp; Refinement Log:</strong> Executed 146 verified <em>T</em> = 0.0 episodes across <code>qwen2.5:3b</code>, <code>qwen2.5:7b</code>, and <code>gemma4:12b</code> on <code>stratified_40.json</code>, documenting exact McNemar tests, compute-latency trade-offs, session-timeout bottlenecks, and two LLM refinement rounds.</li>
+    <li><strong>Empirical Local-Hardware Evaluation &amp; Refinement Log:</strong> Executed 163 verified <em>T</em> = 0.0 episodes across <code>qwen2.5:3b</code>, <code>qwen2.5:7b</code>, and <code>gemma4:12b</code> on <code>stratified_40.json</code>, documenting exact McNemar tests, compute-latency trade-offs, session-timeout bottlenecks, and two LLM refinement rounds.</li>
   </ol>
 
   <h2 class="sec">II. Related Work</h2>
@@ -550,7 +552,7 @@ def main() -> None:
   </div>
 
   <h3 class="subsec">B. Key Findings and Trade-Offs</h3>
-  <p>First, baseline <code>c0</code> agents frequently stop after &le;1 command (50.0% on <code>qwen2.5:3b</code>, 36.8% on <code>qwen2.5:7b</code>). Second, <code>c3</code> reduced &le;1-command answers from 50.0% to 10.0% on <code>qwen2.5:3b</code> (gate fired on 67.5% of episodes) and from 10.0% to 0.0% on <code>qwen2.5:7b</code> DB, which is true by construction when the gate holds the first commit. Third, paired accuracy deltas were not statistically significant on either <code>qwen2.5:3b</code> (27.5% &rarr; 25.0%, +4/&minus;5, McNemar <em>p</em> = 1.0000; DB <em>p</em> = 0.6250; OS <em>p</em> = 1.0000) or <code>qwen2.5:7b</code> DB (45.0% &rarr; 40.0%, +0/&minus;1, <em>p</em> = 1.0000), while increasing prompt tokens (4,241.4 &rarr; 8,403.9 on 3B), latency (16.30 s &rarr; 28.42 s on 3B), and <em>P</em>(10, 0.8) repetition (50.0% &rarr; 75.0% on 3B; 85.0% &rarr; 100.0% on 7B DB).</p>
+  <p>First, baseline <code>c0</code> agents frequently stop after &le;1 command (50.0% on <code>qwen2.5:3b</code>, 36.8% on <code>qwen2.5:7b</code>, 50.0% on <code>gemma4:12b</code> DB). Second, <code>c3</code> reduced &le;1-command answers from 50.0% to 10.0% on <code>qwen2.5:3b</code> (gate fired on 67.5% of episodes), from 10.0% to 0.0% on <code>qwen2.5:7b</code> DB, and from 50.0% to 0.0% on <code>gemma4:12b</code> DB, which is true by construction when the gate holds the first commit. Third, paired accuracy deltas were not statistically significant on <code>qwen2.5:3b</code> (27.5% &rarr; 25.0%, +4/&minus;5, McNemar <em>p</em> = 1.0000), <code>qwen2.5:7b</code> DB (45.0% &rarr; 40.0%, +0/&minus;1, <em>p</em> = 1.0000), or <code>gemma4:12b</code> DB (8 paired: 50.0% &rarr; 50.0%, +0/&minus;0, <em>p</em> = 1.0000; unmatched 17-item <code>c3</code> = 58.8%), while increasing prompt tokens, latency, and <em>P</em>(10, 0.8) repetition.</p>
 
   <h3 class="subsec">C. Local Hardware Bottlenecks &amp; 2-Round Refinement Log</h3>
   <p><code>qwen2.5:7b</code> completed 20/20 DB (45.0%) and 18/20 OS (11.1%) before stopping when <code>os-std</code> index <code>76</code> hung twice (<code>session 127</code> and <code>129 expired</code>). <code>gemma4:12b</code> completed 8/20 DB (50.0%) before stalling past controller timeouts on indices <code>67</code> (<code>session 138 expired</code>) and <code>93</code> (<code>session 139</code> stalled &gt;10 min even with <code>thinking_off: true</code>). Proposal 1 (<code>analyze_proposal1.py</code>) was skipped because only <code>qwen2.5:3b</code> has paired <code>c0</code>/<code>c3</code> coverage; moreover, Proposal 1&rsquo;s subset selection is fit on the same matrix it is scored against, and 5-fold CV over (model, item) cells leaks same-item/other-condition outcomes.</p>

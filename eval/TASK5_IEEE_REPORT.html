@@ -179,7 +179,7 @@
     <li><strong>AgentRL FC Protocol Alignment:</strong> Diagnosed and resolved v0.2-to-FC incompatibilities (AgentRL controller on port <code>5020</code>, <code>session_id</code> headers, incremental <code>messages</code>, OpenAI tool schemas, LF worker scripts, and <code>aiodocker==0.24.0</code>).</li>
     <li><strong>Client-Side Failure-Aware Suite (<code>c0</code>&ndash;<code>c4</code>):</strong> Implemented modular interventions in <code>eval/conditions.py</code>&mdash;repeated-action warnings (<code>c1</code>), state-conditioned failure memory (<code>c2</code>), a budget-aware targeted verify gate (<code>c3</code>), and their combination (<code>c4</code>)&mdash;without altering environment grading.</li>
     <li><strong>Trajectory-Aware Bayesian IRT Framework:</strong> Implemented 1PL, 2PL, and trajectory-aware 2PL IRT models (<code>eval/irt.py</code>) with Gaussian priors and Laplace uncertainty, alongside temperature-filtered paired McNemar analysis (<code>eval/analyze_proposal3.py</code>).</li>
-    <li><strong>Empirical Local-Hardware Evaluation &amp; Refinement Log:</strong> Executed 146 verified <em>T</em> = 0.0 episodes across <code>qwen2.5:3b</code>, <code>qwen2.5:7b</code>, and <code>gemma4:12b</code> on <code>stratified_40.json</code>, documenting exact McNemar tests, compute-latency trade-offs, session-timeout bottlenecks, and two LLM refinement rounds.</li>
+    <li><strong>Empirical Local-Hardware Evaluation &amp; Refinement Log:</strong> Executed 163 verified <em>T</em> = 0.0 episodes across <code>qwen2.5:3b</code>, <code>qwen2.5:7b</code>, and <code>gemma4:12b</code> on <code>stratified_40.json</code>, documenting exact McNemar tests, compute-latency trade-offs, session-timeout bottlenecks, and two LLM refinement rounds.</li>
   </ol>
 
   <h2 class="sec">II. Related Work</h2>
@@ -323,6 +323,7 @@
 <tr><td><code>qwen2.5:7b</code></td><td><code>c0</code></td><td>OS</td><td class='num'>18</td><td class='num'>11.1%</td><td class='num'>&mdash;</td><td class='num'>66.7%</td><td class='num'>16.7%</td><td class='num'>2.28</td><td class='num'>27.8%</td><td class='num'>12.6s</td><td class='num'>&mdash;</td><td class='num'>&mdash;</td></tr>
 <tr><td><code>qwen2.5:7b</code></td><td><code>c3</code></td><td>DB</td><td class='num'>20</td><td class='num'>40.0%</td><td class='num'>20: 45.0%&rarr;40.0%</td><td class='num'>0.0%</td><td class='num'>5.0%</td><td class='num'>4.65</td><td class='num'>100.0%</td><td class='num'>33.1s</td><td class='num'>1.0000</td><td class='num'>+0/-1</td></tr>
 <tr><td><code>gemma4:12b</code></td><td><code>c0</code></td><td>DB*</td><td class='num'>8</td><td class='num'>50.0%</td><td class='num'>&mdash;</td><td class='num'>50.0%</td><td class='num'>12.5%</td><td class='num'>3.25</td><td class='num'>25.0%</td><td class='num'>118.8s</td><td class='num'>&mdash;</td><td class='num'>&mdash;</td></tr>
+<tr><td><code>gemma4:12b</code></td><td><code>c3</code></td><td>DB*</td><td class='num'>17</td><td class='num'>58.8%</td><td class='num'>8: 50.0%&rarr;50.0%</td><td class='num'>0.0%</td><td class='num'>11.8%</td><td class='num'>4.82</td><td class='num'>64.7%</td><td class='num'>65.7s</td><td class='num'>1.0000</td><td class='num'>+0/-0</td></tr>
       </tbody>
     </table>
     <div class="caption"><strong>TABLE I.</strong> Iteration 2 Proposal 3 summary on <code>stratified_40.json</code> (<em>T</em> = 0.0, <code>sampled_rows_excluded = 0</code>). All comparisons are against the repo&rsquo;s own <code>c0</code> baseline. *<code>gemma4:12b</code> stopped after 8 DB episodes due to session timeouts.</div>
@@ -342,83 +343,90 @@
 <text x="40" y="42.9" text-anchor="end" font-size="8.5" fill="#334155">80%</text>
 <line x1="46" y1="22" x2="46" y2="183" stroke="#334155" stroke-width="1"/>
 <line x1="46" y1="183" x2="682" y2="183" stroke="#334155" stroke-width="1"/>
-<rect x="58.7" y="133.8" width="32.4" height="49.2" fill="#64748b" opacity="0.88"/>
-<line x1="74.9" y1="106.4" x2="74.9" y2="154.2" stroke="#0f172a" stroke-width="1.1"/>
-<line x1="70.9" y1="106.4" x2="78.9" y2="106.4" stroke="#0f172a" stroke-width="1.1"/>
-<line x1="70.9" y1="154.2" x2="78.9" y2="154.2" stroke="#0f172a" stroke-width="1.1"/>
-<text x="74.9" y="102.4" text-anchor="middle" font-size="8" font-weight="bold" fill="#0f172a">27.5%</text>
-<text x="74.9" y="196.0" text-anchor="middle" font-size="8" fill="#0f172a">3B c0 All</text>
-<text x="74.9" y="207.0" text-anchor="middle" font-size="7.5" fill="#475569">(N=40)</text>
-<rect x="116.5" y="138.3" width="32.4" height="44.7" fill="#2563eb" opacity="0.88"/>
-<line x1="132.7" y1="111.1" x2="132.7" y2="157.6" stroke="#0f172a" stroke-width="1.1"/>
-<line x1="128.7" y1="111.1" x2="136.7" y2="111.1" stroke="#0f172a" stroke-width="1.1"/>
-<line x1="128.7" y1="157.6" x2="136.7" y2="157.6" stroke="#0f172a" stroke-width="1.1"/>
-<text x="132.7" y="107.1" text-anchor="middle" font-size="8" font-weight="bold" fill="#0f172a">25.0%</text>
-<text x="132.7" y="196.0" text-anchor="middle" font-size="8" fill="#0f172a">3B c3 All</text>
-<text x="132.7" y="207.0" text-anchor="middle" font-size="7.5" fill="#475569">(N=40)</text>
-<rect x="174.4" y="111.4" width="32.4" height="71.6" fill="#64748b" opacity="0.88"/>
-<line x1="190.5" y1="73.3" x2="190.5" y2="143.9" stroke="#0f172a" stroke-width="1.1"/>
-<line x1="186.5" y1="73.3" x2="194.5" y2="73.3" stroke="#0f172a" stroke-width="1.1"/>
-<line x1="186.5" y1="143.9" x2="194.5" y2="143.9" stroke="#0f172a" stroke-width="1.1"/>
-<text x="190.5" y="69.3" text-anchor="middle" font-size="8" font-weight="bold" fill="#0f172a">40.0%</text>
-<text x="190.5" y="196.0" text-anchor="middle" font-size="8" fill="#0f172a">3B c0 DB</text>
-<text x="190.5" y="207.0" text-anchor="middle" font-size="7.5" fill="#475569">(N=20)</text>
-<rect x="232.2" y="129.3" width="32.4" height="53.7" fill="#2563eb" opacity="0.88"/>
-<line x1="248.4" y1="90.2" x2="248.4" y2="157.0" stroke="#0f172a" stroke-width="1.1"/>
-<line x1="244.4" y1="90.2" x2="252.4" y2="90.2" stroke="#0f172a" stroke-width="1.1"/>
-<line x1="244.4" y1="157.0" x2="252.4" y2="157.0" stroke="#0f172a" stroke-width="1.1"/>
-<text x="248.4" y="86.2" text-anchor="middle" font-size="8" font-weight="bold" fill="#0f172a">30.0%</text>
-<text x="248.4" y="196.0" text-anchor="middle" font-size="8" fill="#0f172a">3B c3 DB</text>
-<text x="248.4" y="207.0" text-anchor="middle" font-size="7.5" fill="#475569">(N=20)</text>
-<rect x="290.0" y="156.2" width="32.4" height="26.8" fill="#64748b" opacity="0.88"/>
-<line x1="306.2" y1="118.5" x2="306.2" y2="173.6" stroke="#0f172a" stroke-width="1.1"/>
-<line x1="302.2" y1="118.5" x2="310.2" y2="118.5" stroke="#0f172a" stroke-width="1.1"/>
-<line x1="302.2" y1="173.6" x2="310.2" y2="173.6" stroke="#0f172a" stroke-width="1.1"/>
-<text x="306.2" y="114.5" text-anchor="middle" font-size="8" font-weight="bold" fill="#0f172a">15.0%</text>
-<text x="306.2" y="196.0" text-anchor="middle" font-size="8" fill="#0f172a">3B c0 OS</text>
-<text x="306.2" y="207.0" text-anchor="middle" font-size="7.5" fill="#475569">(N=20)</text>
-<rect x="347.8" y="147.2" width="32.4" height="35.8" fill="#2563eb" opacity="0.88"/>
-<line x1="364.0" y1="108.6" x2="364.0" y2="168.6" stroke="#0f172a" stroke-width="1.1"/>
-<line x1="360.0" y1="108.6" x2="368.0" y2="108.6" stroke="#0f172a" stroke-width="1.1"/>
-<line x1="360.0" y1="168.6" x2="368.0" y2="168.6" stroke="#0f172a" stroke-width="1.1"/>
-<text x="364.0" y="104.6" text-anchor="middle" font-size="8" font-weight="bold" fill="#0f172a">20.0%</text>
-<text x="364.0" y="196.0" text-anchor="middle" font-size="8" fill="#0f172a">3B c3 OS</text>
-<text x="364.0" y="207.0" text-anchor="middle" font-size="7.5" fill="#475569">(N=20)</text>
-<rect x="405.6" y="131.2" width="32.4" height="51.8" fill="#0d9488" opacity="0.88"/>
-<line x1="421.8" y1="102.9" x2="421.8" y2="152.6" stroke="#0f172a" stroke-width="1.1"/>
-<line x1="417.8" y1="102.9" x2="425.8" y2="102.9" stroke="#0f172a" stroke-width="1.1"/>
-<line x1="417.8" y1="152.6" x2="425.8" y2="152.6" stroke="#0f172a" stroke-width="1.1"/>
-<text x="421.8" y="98.9" text-anchor="middle" font-size="8" font-weight="bold" fill="#0f172a">28.9%</text>
-<text x="421.8" y="196.0" text-anchor="middle" font-size="8" fill="#0f172a">7B c0 All</text>
-<text x="421.8" y="207.0" text-anchor="middle" font-size="7.5" fill="#475569">(N=38)</text>
-<rect x="463.4" y="102.5" width="32.4" height="80.5" fill="#0d9488" opacity="0.88"/>
-<line x1="479.6" y1="65.3" x2="479.6" y2="136.8" stroke="#0f172a" stroke-width="1.1"/>
-<line x1="475.6" y1="65.3" x2="483.6" y2="65.3" stroke="#0f172a" stroke-width="1.1"/>
-<line x1="475.6" y1="136.8" x2="483.6" y2="136.8" stroke="#0f172a" stroke-width="1.1"/>
-<text x="479.6" y="61.3" text-anchor="middle" font-size="8" font-weight="bold" fill="#0f172a">45.0%</text>
-<text x="479.6" y="196.0" text-anchor="middle" font-size="8" fill="#0f172a">7B c0 DB</text>
-<text x="479.6" y="207.0" text-anchor="middle" font-size="7.5" fill="#475569">(N=20)</text>
-<rect x="521.3" y="111.4" width="32.4" height="71.6" fill="#0284c7" opacity="0.88"/>
-<line x1="537.5" y1="73.3" x2="537.5" y2="143.9" stroke="#0f172a" stroke-width="1.1"/>
-<line x1="533.5" y1="73.3" x2="541.5" y2="73.3" stroke="#0f172a" stroke-width="1.1"/>
-<line x1="533.5" y1="143.9" x2="541.5" y2="143.9" stroke="#0f172a" stroke-width="1.1"/>
-<text x="537.5" y="69.3" text-anchor="middle" font-size="8" font-weight="bold" fill="#0f172a">40.0%</text>
-<text x="537.5" y="196.0" text-anchor="middle" font-size="8" fill="#0f172a">7B c3 DB</text>
-<text x="537.5" y="207.0" text-anchor="middle" font-size="7.5" fill="#475569">(N=20)</text>
-<rect x="579.1" y="163.1" width="32.4" height="19.9" fill="#0d9488" opacity="0.88"/>
-<line x1="595.3" y1="124.3" x2="595.3" y2="177.5" stroke="#0f172a" stroke-width="1.1"/>
-<line x1="591.3" y1="124.3" x2="599.3" y2="124.3" stroke="#0f172a" stroke-width="1.1"/>
-<line x1="591.3" y1="177.5" x2="599.3" y2="177.5" stroke="#0f172a" stroke-width="1.1"/>
-<text x="595.3" y="120.3" text-anchor="middle" font-size="8" font-weight="bold" fill="#0f172a">11.1%</text>
-<text x="595.3" y="196.0" text-anchor="middle" font-size="8" fill="#0f172a">7B c0 OS</text>
-<text x="595.3" y="207.0" text-anchor="middle" font-size="7.5" fill="#475569">(N=18)</text>
-<rect x="636.9" y="93.6" width="32.4" height="89.4" fill="#d97706" opacity="0.88"/>
-<line x1="653.1" y1="42.6" x2="653.1" y2="144.5" stroke="#0f172a" stroke-width="1.1"/>
-<line x1="649.1" y1="42.6" x2="657.1" y2="42.6" stroke="#0f172a" stroke-width="1.1"/>
-<line x1="649.1" y1="144.5" x2="657.1" y2="144.5" stroke="#0f172a" stroke-width="1.1"/>
-<text x="653.1" y="38.6" text-anchor="middle" font-size="8" font-weight="bold" fill="#0f172a">50.0%</text>
-<text x="653.1" y="196.0" text-anchor="middle" font-size="8" fill="#0f172a">12B c0 DB*</text>
-<text x="653.1" y="207.0" text-anchor="middle" font-size="7.5" fill="#475569">(N=8)</text>
+<rect x="57.7" y="133.8" width="29.7" height="49.2" fill="#64748b" opacity="0.88"/>
+<line x1="72.5" y1="106.4" x2="72.5" y2="154.2" stroke="#0f172a" stroke-width="1.1"/>
+<line x1="68.5" y1="106.4" x2="76.5" y2="106.4" stroke="#0f172a" stroke-width="1.1"/>
+<line x1="68.5" y1="154.2" x2="76.5" y2="154.2" stroke="#0f172a" stroke-width="1.1"/>
+<text x="72.5" y="102.4" text-anchor="middle" font-size="8" font-weight="bold" fill="#0f172a">27.5%</text>
+<text x="72.5" y="196.0" text-anchor="middle" font-size="8" fill="#0f172a">3B c0 All</text>
+<text x="72.5" y="207.0" text-anchor="middle" font-size="7.5" fill="#475569">(N=40)</text>
+<rect x="110.7" y="138.3" width="29.7" height="44.7" fill="#2563eb" opacity="0.88"/>
+<line x1="125.5" y1="111.1" x2="125.5" y2="157.6" stroke="#0f172a" stroke-width="1.1"/>
+<line x1="121.5" y1="111.1" x2="129.5" y2="111.1" stroke="#0f172a" stroke-width="1.1"/>
+<line x1="121.5" y1="157.6" x2="129.5" y2="157.6" stroke="#0f172a" stroke-width="1.1"/>
+<text x="125.5" y="107.1" text-anchor="middle" font-size="8" font-weight="bold" fill="#0f172a">25.0%</text>
+<text x="125.5" y="196.0" text-anchor="middle" font-size="8" fill="#0f172a">3B c3 All</text>
+<text x="125.5" y="207.0" text-anchor="middle" font-size="7.5" fill="#475569">(N=40)</text>
+<rect x="163.7" y="111.4" width="29.7" height="71.6" fill="#64748b" opacity="0.88"/>
+<line x1="178.5" y1="73.3" x2="178.5" y2="143.9" stroke="#0f172a" stroke-width="1.1"/>
+<line x1="174.5" y1="73.3" x2="182.5" y2="73.3" stroke="#0f172a" stroke-width="1.1"/>
+<line x1="174.5" y1="143.9" x2="182.5" y2="143.9" stroke="#0f172a" stroke-width="1.1"/>
+<text x="178.5" y="69.3" text-anchor="middle" font-size="8" font-weight="bold" fill="#0f172a">40.0%</text>
+<text x="178.5" y="196.0" text-anchor="middle" font-size="8" fill="#0f172a">3B c0 DB</text>
+<text x="178.5" y="207.0" text-anchor="middle" font-size="7.5" fill="#475569">(N=20)</text>
+<rect x="216.7" y="129.3" width="29.7" height="53.7" fill="#2563eb" opacity="0.88"/>
+<line x1="231.5" y1="90.2" x2="231.5" y2="157.0" stroke="#0f172a" stroke-width="1.1"/>
+<line x1="227.5" y1="90.2" x2="235.5" y2="90.2" stroke="#0f172a" stroke-width="1.1"/>
+<line x1="227.5" y1="157.0" x2="235.5" y2="157.0" stroke="#0f172a" stroke-width="1.1"/>
+<text x="231.5" y="86.2" text-anchor="middle" font-size="8" font-weight="bold" fill="#0f172a">30.0%</text>
+<text x="231.5" y="196.0" text-anchor="middle" font-size="8" fill="#0f172a">3B c3 DB</text>
+<text x="231.5" y="207.0" text-anchor="middle" font-size="7.5" fill="#475569">(N=20)</text>
+<rect x="269.7" y="156.2" width="29.7" height="26.8" fill="#64748b" opacity="0.88"/>
+<line x1="284.5" y1="118.5" x2="284.5" y2="173.6" stroke="#0f172a" stroke-width="1.1"/>
+<line x1="280.5" y1="118.5" x2="288.5" y2="118.5" stroke="#0f172a" stroke-width="1.1"/>
+<line x1="280.5" y1="173.6" x2="288.5" y2="173.6" stroke="#0f172a" stroke-width="1.1"/>
+<text x="284.5" y="114.5" text-anchor="middle" font-size="8" font-weight="bold" fill="#0f172a">15.0%</text>
+<text x="284.5" y="196.0" text-anchor="middle" font-size="8" fill="#0f172a">3B c0 OS</text>
+<text x="284.5" y="207.0" text-anchor="middle" font-size="7.5" fill="#475569">(N=20)</text>
+<rect x="322.7" y="147.2" width="29.7" height="35.8" fill="#2563eb" opacity="0.88"/>
+<line x1="337.5" y1="108.6" x2="337.5" y2="168.6" stroke="#0f172a" stroke-width="1.1"/>
+<line x1="333.5" y1="108.6" x2="341.5" y2="108.6" stroke="#0f172a" stroke-width="1.1"/>
+<line x1="333.5" y1="168.6" x2="341.5" y2="168.6" stroke="#0f172a" stroke-width="1.1"/>
+<text x="337.5" y="104.6" text-anchor="middle" font-size="8" font-weight="bold" fill="#0f172a">20.0%</text>
+<text x="337.5" y="196.0" text-anchor="middle" font-size="8" fill="#0f172a">3B c3 OS</text>
+<text x="337.5" y="207.0" text-anchor="middle" font-size="7.5" fill="#475569">(N=20)</text>
+<rect x="375.7" y="131.2" width="29.7" height="51.8" fill="#0d9488" opacity="0.88"/>
+<line x1="390.5" y1="102.9" x2="390.5" y2="152.6" stroke="#0f172a" stroke-width="1.1"/>
+<line x1="386.5" y1="102.9" x2="394.5" y2="102.9" stroke="#0f172a" stroke-width="1.1"/>
+<line x1="386.5" y1="152.6" x2="394.5" y2="152.6" stroke="#0f172a" stroke-width="1.1"/>
+<text x="390.5" y="98.9" text-anchor="middle" font-size="8" font-weight="bold" fill="#0f172a">28.9%</text>
+<text x="390.5" y="196.0" text-anchor="middle" font-size="8" fill="#0f172a">7B c0 All</text>
+<text x="390.5" y="207.0" text-anchor="middle" font-size="7.5" fill="#475569">(N=38)</text>
+<rect x="428.7" y="102.5" width="29.7" height="80.5" fill="#0d9488" opacity="0.88"/>
+<line x1="443.5" y1="65.3" x2="443.5" y2="136.8" stroke="#0f172a" stroke-width="1.1"/>
+<line x1="439.5" y1="65.3" x2="447.5" y2="65.3" stroke="#0f172a" stroke-width="1.1"/>
+<line x1="439.5" y1="136.8" x2="447.5" y2="136.8" stroke="#0f172a" stroke-width="1.1"/>
+<text x="443.5" y="61.3" text-anchor="middle" font-size="8" font-weight="bold" fill="#0f172a">45.0%</text>
+<text x="443.5" y="196.0" text-anchor="middle" font-size="8" fill="#0f172a">7B c0 DB</text>
+<text x="443.5" y="207.0" text-anchor="middle" font-size="7.5" fill="#475569">(N=20)</text>
+<rect x="481.7" y="111.4" width="29.7" height="71.6" fill="#0284c7" opacity="0.88"/>
+<line x1="496.5" y1="73.3" x2="496.5" y2="143.9" stroke="#0f172a" stroke-width="1.1"/>
+<line x1="492.5" y1="73.3" x2="500.5" y2="73.3" stroke="#0f172a" stroke-width="1.1"/>
+<line x1="492.5" y1="143.9" x2="500.5" y2="143.9" stroke="#0f172a" stroke-width="1.1"/>
+<text x="496.5" y="69.3" text-anchor="middle" font-size="8" font-weight="bold" fill="#0f172a">40.0%</text>
+<text x="496.5" y="196.0" text-anchor="middle" font-size="8" fill="#0f172a">7B c3 DB</text>
+<text x="496.5" y="207.0" text-anchor="middle" font-size="7.5" fill="#475569">(N=20)</text>
+<rect x="534.7" y="163.1" width="29.7" height="19.9" fill="#0d9488" opacity="0.88"/>
+<line x1="549.5" y1="124.3" x2="549.5" y2="177.5" stroke="#0f172a" stroke-width="1.1"/>
+<line x1="545.5" y1="124.3" x2="553.5" y2="124.3" stroke="#0f172a" stroke-width="1.1"/>
+<line x1="545.5" y1="177.5" x2="553.5" y2="177.5" stroke="#0f172a" stroke-width="1.1"/>
+<text x="549.5" y="120.3" text-anchor="middle" font-size="8" font-weight="bold" fill="#0f172a">11.1%</text>
+<text x="549.5" y="196.0" text-anchor="middle" font-size="8" fill="#0f172a">7B c0 OS</text>
+<text x="549.5" y="207.0" text-anchor="middle" font-size="7.5" fill="#475569">(N=18)</text>
+<rect x="587.7" y="93.6" width="29.7" height="89.4" fill="#d97706" opacity="0.88"/>
+<line x1="602.5" y1="42.6" x2="602.5" y2="144.5" stroke="#0f172a" stroke-width="1.1"/>
+<line x1="598.5" y1="42.6" x2="606.5" y2="42.6" stroke="#0f172a" stroke-width="1.1"/>
+<line x1="598.5" y1="144.5" x2="606.5" y2="144.5" stroke="#0f172a" stroke-width="1.1"/>
+<text x="602.5" y="38.6" text-anchor="middle" font-size="8" font-weight="bold" fill="#0f172a">50.0%</text>
+<text x="602.5" y="196.0" text-anchor="middle" font-size="8" fill="#0f172a">12B c0 DB*</text>
+<text x="602.5" y="207.0" text-anchor="middle" font-size="7.5" fill="#475569">(N=8)</text>
+<rect x="640.7" y="77.8" width="29.7" height="105.2" fill="#ea580c" opacity="0.88"/>
+<line x1="655.5" y1="42.8" x2="655.5" y2="118.6" stroke="#0f172a" stroke-width="1.1"/>
+<line x1="651.5" y1="42.8" x2="659.5" y2="42.8" stroke="#0f172a" stroke-width="1.1"/>
+<line x1="651.5" y1="118.6" x2="659.5" y2="118.6" stroke="#0f172a" stroke-width="1.1"/>
+<text x="655.5" y="38.8" text-anchor="middle" font-size="8" font-weight="bold" fill="#0f172a">58.8%</text>
+<text x="655.5" y="196.0" text-anchor="middle" font-size="8" fill="#0f172a">12B c3 DB*</text>
+<text x="655.5" y="207.0" text-anchor="middle" font-size="7.5" fill="#475569">(N=17)</text>
 <rect x="140" y="217" width="10" height="8" fill="#64748b"/><text x="154" y="225" font-size="8" fill="#334155">qwen2.5:3b c0</text>
 <rect x="240" y="217" width="10" height="8" fill="#2563eb"/><text x="254" y="225" font-size="8" fill="#334155">qwen2.5:3b c3</text>
 <rect x="340" y="217" width="10" height="8" fill="#0d9488"/><text x="354" y="225" font-size="8" fill="#334155">qwen2.5:7b c0</text>
@@ -506,7 +514,7 @@
   </div>
 
   <h3 class="subsec">B. Key Findings and Trade-Offs</h3>
-  <p>First, baseline <code>c0</code> agents frequently stop after &le;1 command (50.0% on <code>qwen2.5:3b</code>, 36.8% on <code>qwen2.5:7b</code>). Second, <code>c3</code> reduced &le;1-command answers from 50.0% to 10.0% on <code>qwen2.5:3b</code> (gate fired on 67.5% of episodes) and from 10.0% to 0.0% on <code>qwen2.5:7b</code> DB, which is true by construction when the gate holds the first commit. Third, paired accuracy deltas were not statistically significant on either <code>qwen2.5:3b</code> (27.5% &rarr; 25.0%, +4/&minus;5, McNemar <em>p</em> = 1.0000; DB <em>p</em> = 0.6250; OS <em>p</em> = 1.0000) or <code>qwen2.5:7b</code> DB (45.0% &rarr; 40.0%, +0/&minus;1, <em>p</em> = 1.0000), while increasing prompt tokens (4,241.4 &rarr; 8,403.9 on 3B), latency (16.30 s &rarr; 28.42 s on 3B), and <em>P</em>(10, 0.8) repetition (50.0% &rarr; 75.0% on 3B; 85.0% &rarr; 100.0% on 7B DB).</p>
+  <p>First, baseline <code>c0</code> agents frequently stop after &le;1 command (50.0% on <code>qwen2.5:3b</code>, 36.8% on <code>qwen2.5:7b</code>, 50.0% on <code>gemma4:12b</code> DB). Second, <code>c3</code> reduced &le;1-command answers from 50.0% to 10.0% on <code>qwen2.5:3b</code> (gate fired on 67.5% of episodes), from 10.0% to 0.0% on <code>qwen2.5:7b</code> DB, and from 50.0% to 0.0% on <code>gemma4:12b</code> DB, which is true by construction when the gate holds the first commit. Third, paired accuracy deltas were not statistically significant on <code>qwen2.5:3b</code> (27.5% &rarr; 25.0%, +4/&minus;5, McNemar <em>p</em> = 1.0000), <code>qwen2.5:7b</code> DB (45.0% &rarr; 40.0%, +0/&minus;1, <em>p</em> = 1.0000), or <code>gemma4:12b</code> DB (8 paired: 50.0% &rarr; 50.0%, +0/&minus;0, <em>p</em> = 1.0000; unmatched 17-item <code>c3</code> = 58.8%), while increasing prompt tokens, latency, and <em>P</em>(10, 0.8) repetition.</p>
 
   <h3 class="subsec">C. Local Hardware Bottlenecks &amp; 2-Round Refinement Log</h3>
   <p><code>qwen2.5:7b</code> completed 20/20 DB (45.0%) and 18/20 OS (11.1%) before stopping when <code>os-std</code> index <code>76</code> hung twice (<code>session 127</code> and <code>129 expired</code>). <code>gemma4:12b</code> completed 8/20 DB (50.0%) before stalling past controller timeouts on indices <code>67</code> (<code>session 138 expired</code>) and <code>93</code> (<code>session 139</code> stalled &gt;10 min even with <code>thinking_off: true</code>). Proposal 1 (<code>analyze_proposal1.py</code>) was skipped because only <code>qwen2.5:3b</code> has paired <code>c0</code>/<code>c3</code> coverage; moreover, Proposal 1&rsquo;s subset selection is fit on the same matrix it is scored against, and 5-fold CV over (model, item) cells leaks same-item/other-condition outcomes.</p>
